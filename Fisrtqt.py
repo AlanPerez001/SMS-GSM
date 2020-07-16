@@ -555,7 +555,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             cursor.execute('SELECT * FROM SMS WHERE Enviado = "F"')
             rows = cursor.fetchall()
             if rows:
-                print('Simon')
+                print('Si entro')
                 self.hilos()
         except Exception as e:
             e
@@ -564,12 +564,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             cursor.execute('SELECT * FROM SMS WHERE Enviado = "I"')
             rows = cursor.fetchall()
             if rows:
-                print('Simon con las I----')
+                print('Si entro con enviado I')
                 try:
                     cursor.execute('SELECT * FROM SMS WHERE Enviado = "F"')
                     rows = cursor.fetchall()
                     if rows:
-                        print('Simon')
+                        print('Si hay mensajes')
                         self.hilos()
                 except Exception as e:
                     e
