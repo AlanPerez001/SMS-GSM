@@ -575,7 +575,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     e
 
         except Exception as e:
-            print('Hubo pedo carnal'+str(e))
+            print(e)
 
 
 
