@@ -11,13 +11,14 @@ import concurrent.futures
 import threading
 import sqlite3
 import serial.tools.list_ports
+import openpyxl
 
 
 
 def actualiza_mensajes(number,time,text):
     print(u'== SMS message received ==\nFrom: {0}\nTime: {1}\nMessage:\n{2}\n'.format(number,time,text))
 
-files = ''
+db_conn = ''
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
     def __init__(self, *args, **kwargs):
@@ -43,20 +44,91 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.crear_campaa.clicked.connect(self.create_show)
     
     def create_show(self):
+        
         self.stackedWidget.setCurrentIndex(6)
+        self.Importar_db.hide()
         self.Create_DB.clicked.connect(self.create_db)
+        self.Importar_db.clicked.connect(self.import_db)
+
+    def import_db(self):
+        
+        excel_file, _filter  = QFileDialog.getOpenFileName(self, 'Selecciona tu archivo XLSX a importar', 
+        'C:\\Users\\Developer\\Desktop\\',"Excel File (*.xlsx)")
+        print(excel_file)
+        wb_obj = openpyxl.load_workbook(excel_file) 
+        sheet_obj = wb_obj.active 
+        m_row = sheet_obj.max_row
+        con = sqlite3.connect(db_conn)
+        cursor = con.cursor()
+        for i in range(2, m_row + 1): 
+            numero = sheet_obj.cell(row = i, column = 1) 
+            print(numero.value)
+            mensaje = sheet_obj.cell(row = i, column = 2) 
+            print(mensaje.value)
+            cursor.execute('INSERT INTO SMS (Numero,Mensaje,Enviado) VALUES("'+str(numero.value)+'","'+str(mensaje.value)+'","F")')
+            con.commit()
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setInformativeText('Registros importados a la base de datos')
+        msg.setWindowTitle("info")
+        msg.exec_()
+        self.updateDB()
+
 
     def create_db(self):
+        global db_conn
         name_db=self.Name_create_db.toPlainText()
-        print(name_db)
-        files, _filter = QFileDialog.getExistingDirectoryUrl(None,'C:\\Users\\Developer\\Desktop\\')
-        print(files )
+        files = QFileDialog.getExistingDirectoryUrl(None,'C:\\Users\\Developer\\Desktop\\')
+        print(len(files.path()))
+        path = str(files.path())
+        path1=path[1:len(path)].replace('/','\\')
+        database = str(path1)+'\\'+str(name_db)+'.db'
+        print(database)
+        sql_create_projects_table = """ CREATE TABLE "SMS" (
+        "ID"	INTEGER UNIQUE,
+        "Numero"	INTEGER,
+        "Mensaje"	TEXT,
+        "Enviado"	TEXT,
+        PRIMARY KEY("ID" AUTOINCREMENT)
+    ); """
+
+        sql_create_tasks_table = """CREATE TABLE "Enviados" (
+                                "ID"	INTEGER,
+                                "Numero"	INTEGER,
+                                "Mensaje"	TEXT,
+                                "Puerto"	TEXT,
+                                "Hora_envio"	TEXT,
+                                PRIMARY KEY("ID" AUTOINCREMENT)
+                            );"""
+
+        # create a database connection
+        conn = sqlite3.connect(database)
+        try:
+            c = conn.cursor()
+            c.execute(sql_create_projects_table)
+        except Exception as e:
+            print(e)
+
+
+        try:
+            c = conn.cursor()
+            c.execute(sql_create_tasks_table)
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setInformativeText('Base de datos creada con exito :D')
+            msg.setWindowTitle("info")
+            msg.exec_()
+            self.Importar_db.show()
+            db_conn = database
+        except Exception as e:
+            print(e)
+
 
     def getfile(self):
-        global files
-        files, _filter  = QFileDialog.getOpenFileName(self, 'Selecciona tu base de datos', 
+        global db_conn
+        db_conn, _filter  = QFileDialog.getOpenFileName(self, 'Selecciona tu base de datos', 
         'C:\\Users\\Developer\\Desktop\\',"data base file (*.db)")
-        print(files)
+        print(db_conn)
         self.updateDB()
 
     def actionSchedul(self):
@@ -191,8 +263,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         received.start()
 
     def updateDB(self):
-        if files != '':
-            con = sqlite3.connect(str(files))
+        if db_conn != '':
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('SELECT* FROM SMS')
             rows = cursor.fetchall()
@@ -245,7 +317,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com5(self):
         port = 'COM5'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(db_conn)
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -281,7 +353,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com6(self):
         port = 'COM6'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -317,7 +389,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com7(self):
         port = 'COM7'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -353,7 +425,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com8(self):
         port = 'COM8'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -391,7 +463,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com9(self):
         port = 'COM9'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -427,7 +499,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com10(self):
         port = 'COM10'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -463,7 +535,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com11(self):
         port = 'COM11'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -499,7 +571,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def Com12(self):
         port = 'COM12'
         try:
-            con = sqlite3.connect('SMSTest.db')
+            con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('Select * FROM SMS WHERE Enviado ="F"')
             rows = cursor.fetchall()
@@ -549,7 +621,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         msg.exec_()
 
     def SecondRound(self):
-        con = sqlite3.connect('SMSTest.db')
+        con = sqlite3.connect(str(db_conn))
         cursor = con.cursor()
         try:
             cursor.execute('SELECT * FROM SMS WHERE Enviado = "F"')
@@ -573,7 +645,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         self.hilos()
                 except Exception as e:
                     e
-
         except Exception as e:
             print(e)
 

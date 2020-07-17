@@ -2387,6 +2387,19 @@
        <string>Introduce el nombre de la capaña:</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="Importar_db">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>380</y>
+        <width>111</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Importar</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QPushButton" name="IniciarBTN">
