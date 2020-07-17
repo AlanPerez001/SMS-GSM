@@ -14,14 +14,27 @@ import serial.tools.list_ports
 import openpyxl
 
 
-
-def actualiza_mensajes(number,time,text):
-    print(u'== SMS message received ==\nFrom: {0}\nTime: {1}\nMessage:\n{2}\n'.format(number,time,text))
-
-db_conn = ''
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    
+
+    #Inicia aplicacion y actionbuttons que activan las funciones
     def __init__(self, *args, **kwargs):
+        db_conn = ''
+        global modem5
+        global modem6
+        global modem7
+        global modem8
+        global modem9
+        global modem10
+        global modem11
+        global modem12
+        modem5= GsmModem('COM5', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
+        modem6= GsmModem('COM6', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
+        modem7= GsmModem('COM7', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
+        modem8= GsmModem('COM8', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
+        modem9= GsmModem('COM9', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
+        modem10= GsmModem('COM10', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
+        modem11= GsmModem('COM11', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
+        modem12= GsmModem('COM12', 115200,smsReceivedCallbackFunc= self.ReceivedSms)
         QtWidgets.QMainWindow.__init__(self, *args, **kwargs)
         self.setupUi(self)
         self.stackedWidget.setCurrentIndex(1)
@@ -43,15 +56,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.Actualiza_db.clicked.connect(self.updateDB) 
         self.crear_campaa.clicked.connect(self.create_show)
     
+    #Muestra el index 6
     def create_show(self):
-        
         self.stackedWidget.setCurrentIndex(6)
         self.Importar_db.hide()
         self.Create_DB.clicked.connect(self.create_db)
         self.Importar_db.clicked.connect(self.import_db)
-
+    
+    # Lee los datos en el excel del usuario para insertarlos a la base de datos
     def import_db(self):
-        
         excel_file, _filter  = QFileDialog.getOpenFileName(self, 'Selecciona tu archivo XLSX a importar', 
         'C:\\Users\\Developer\\Desktop\\',"Excel File (*.xlsx)")
         print(excel_file)
@@ -74,45 +87,52 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         msg.exec_()
         self.updateDB()
 
-
+    #crea una base de datos nueva con el nombre escrito por el usuario en la ubicacion seleccionada
     def create_db(self):
         global db_conn
         name_db=self.Name_create_db.toPlainText()
         files = QFileDialog.getExistingDirectoryUrl(None,'C:\\Users\\Developer\\Desktop\\')
-        print(len(files.path()))
         path = str(files.path())
         path1=path[1:len(path)].replace('/','\\')
         database = str(path1)+'\\'+str(name_db)+'.db'
-        print(database)
-        sql_create_projects_table = """ CREATE TABLE "SMS" (
+        sms = """ CREATE TABLE "SMS" (
         "ID"	INTEGER UNIQUE,
         "Numero"	INTEGER,
         "Mensaje"	TEXT,
         "Enviado"	TEXT,
         PRIMARY KEY("ID" AUTOINCREMENT)
-    ); """
+        ); """
 
-        sql_create_tasks_table = """CREATE TABLE "Enviados" (
+        enviados = """CREATE TABLE "Enviados" (
                                 "ID"	INTEGER,
                                 "Numero"	INTEGER,
                                 "Mensaje"	TEXT,
                                 "Puerto"	TEXT,
                                 "Hora_envio"	TEXT,
                                 PRIMARY KEY("ID" AUTOINCREMENT)
-                            );"""
+                                );"""
 
-        # create a database connection
+        recibidos = """CREATE TABLE "Recibidos" (
+                    "ID"	INTEGER UNIQUE,
+                    "Numero"	INTEGER,
+                    "Mensaje"	TEXT,
+                    "Hora_recibido"	TEXT,
+                    PRIMARY KEY("ID" AUTOINCREMENT)
+                    );""" 
         conn = sqlite3.connect(database)
         try:
             c = conn.cursor()
-            c.execute(sql_create_projects_table)
+            c.execute(sms)
         except Exception as e:
             print(e)
-
-
         try:
             c = conn.cursor()
-            c.execute(sql_create_tasks_table)
+            c.execute(enviados)
+        except Exception as e:
+            print(e)
+        try:
+            c = conn.cursor()
+            c.execute(recibidos)
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
             msg.setInformativeText('Base de datos creada con exito :D')
@@ -123,32 +143,46 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as e:
             print(e)
 
-
+    #Obtiene la ruta de la base de datos seleccionada
     def getfile(self):
         global db_conn
         db_conn, _filter  = QFileDialog.getOpenFileName(self, 'Selecciona tu base de datos', 
         'C:\\Users\\Developer\\Desktop\\',"data base file (*.db)")
-        print(db_conn)
         self.updateDB()
-
+    
+    #muestra el index 2 mensajes programados (Coming Soon)
     def actionSchedul(self):
         self.stackedWidget.setCurrentIndex(2)
-        self.pushButton_5.clicked.connect(self.ConectModem)
 
+    # Cierra conecciones con los puertos abiertos y cierra la app
     def actionExitapp(self):
+
         try:
-            app.exit()
+            modem5.close()
+            modem6.close()
+            modem7.close()
+            modem8.close()
+            modem9.close()
+            modem10.close()
+            modem11.close()
+            modem12.close()
             self.modem.close()
         except Exception as e:
             print(e)
+    
+        finally:
+            app.exit()
 
+    #Muestra index 1
     def actionConnect(self):
         self.stackedWidget.setCurrentIndex(1)
-    
+
+    #Muestra index 0
     def actionSend(self):
         self.stackedWidget.setCurrentIndex(0)
         self.pushButton.clicked.connect(self.SendSms)
 
+    #Devuelve y activa el index seleccionado en el Combobox
     def combo(self):
         seleccion = self.comboBox.currentText()
         if str(seleccion)=='Componer':
@@ -157,6 +191,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif str(seleccion) == 'Programado':
             self.stackedWidget.setCurrentIndex(2)
 
+    #Establece una coneccion individual del puerto seleccionado
     def ConectModem(self):
         try:
             portSelected = self.listWidget.currentItem().text() 
@@ -171,53 +206,57 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as e:
             print(e)
 
+    #Inicia la coneccion con todos los puertos disponibles---------------------------------------------------------------------------------------------------------------#
     def startcon (self):
         try:
-            name = self.modem.networkName
-            print(name)
-            portSelected = self.listWidget.currentItem().text() 
-            print(portSelected)
-            try:
-                self.modem = GsmModem(str(portSelected), 115200,smsReceivedCallbackFunc= MainWindow.ReceivedSms)
-                self.modem.smsTextMode = False
-                self.modem.connect()
-                print('Conectado')
-            except Exception as F:
-                print('El puerto '+str(portSelected)+' No esta disponible: '+ str(F))
+            modem5.smsTextMode = False
+            modem5.connect()
+            modem6.smsTextMode = False
+            modem6.connect()
+            modem7.smsTextMode = False
+            modem7.connect()
+            modem8.smsTextMode = False
+            modem8.connect()
+            modem9.smsTextMode = False
+            modem9.connect()
+            modem10.smsTextMode = False
+            modem10.connect()
+            modem11.smsTextMode = False
+            modem11.connect()
+            modem12.smsTextMode = False
+            modem12.connect()
         except Exception as e:
             print(e)
-            if str(e) == "'MainWindow' object has no attribute 'modem'":
-                print('Modem No conectado, selecciona un puerto por favor')
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("Error")
-                msg.setInformativeText('Modem No conectado, selecciona un puerto por favor')
-                msg.setWindowTitle("Error")
-                msg.exec_()
-                    
+        finally:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setInformativeText('Conneccion establecida con los puertos :D')
+            msg.setWindowTitle("info")
+            msg.exec_()
+            
+    # obtiene una lista de los puertos existentes
     def ActualizarPort(self):
         ports = serial.tools.list_ports.comports()
         advance = 0
         porcantaje = float(100/len(ports))
         self.listWidget.clear()
-        hilos = len(ports)
-        count_hilos = 1
         num_hilo = 1
         for p in sorted(ports,key=None, reverse=False):
             advance += float(porcantaje)
             port = p.device
-            print(port)
             try:
                 self.progressBar.show()
                 self.progressBar.setGeometry(QtCore.QRect(300, 330, 201, 21))
                 self.progressBar.setProperty("value", advance)
                 self.progressBar.setObjectName("progressBar")
+                #Abre hilo llamando a la funcion Connectport para crear coneccion momentanea y corroborar el estado del puerto
                 hilo = threading.Thread(name='hilo %s' % str(num_hilo), target=self.connectport, args=(port,))
                 hilo.start()
                 num_hilo+=1
             finally:
                 self.progressBar.hide()
                 
+    #Crea una coneccion momentanea para corroborar el estado de los puertos y  escribe los puertos en la lista desplegable
     def connectport(self,port):
         try: 
             phone = serial.Serial(str(port),  115200, timeout=0.2)
@@ -234,6 +273,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             except Exception as f:
                 print(f)
 
+    #Envia mensaje de texto al numero escrito por el usuario
     def SendSms(self):
         num = self.Num_edit.toPlainText()
         text = self.SMSText_edit.toPlainText()
@@ -247,7 +287,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             msg.setInformativeText('Mensaje enviado con exito :D')
             msg.setWindowTitle("info")
             msg.exec_()
-            
         except Exception as F:
             if str(F) == 'CMS 500':
                 print('El puerto seleccionado devolvio '+str(F)+', [Error Unknown]')
@@ -258,12 +297,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 msg.setWindowTitle("Error")
                 msg.exec_()
 
-    def ReceivedSms(self):
-        received = threading.Thread(target = actualiza_mensajes(self.number,self.time,self.text))
-        received.start()
-
+    #Cuando un mensaje se recibe redirige a la funcion para obtener el mensaje
+    def ReceivedSms(self, sms):
+        print(u'== SMS message received ==\nFrom: {0}\nTime: {1}\nMessage: {2}'.format(sms.number,sms.time,sms.text))
+        con = sqlite3.connect(str(db_conn))
+        cursor = con.cursor()
+        cursor.execute('INSERT INTO Recibidos (Numero,Mensaje,Hora_recibido) VALUES("'+str(sms.number)+'","'+str(sms.text)+'","'+str(sms.time)+'")')
+        con.commit()
+        self.updateDB()
+    #Actualiza la base de datos Enviados y Mensajes
     def updateDB(self):
         if db_conn != '':
+            
             con = sqlite3.connect(str(db_conn))
             cursor = con.cursor()
             cursor.execute('SELECT* FROM SMS')
@@ -283,10 +328,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 enviado = self.tableWidget_4.item(count, 2)
                 enviado.setText(str(i[3]))
                 count +=1
+
             cursor.execute('SELECT* FROM Enviados')
             rows = cursor.fetchall()
             count2 = 0
-
             for i in rows:
                 numero = QtWidgets.QTableWidgetItem()
                 self.tableWidget_3.setItem(count2, 0, numero)
@@ -305,6 +350,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 date = self.tableWidget_3.item(count2, 3)
                 date.setText(str(i[4]))
                 count2 +=1
+        
+            cursor.execute('SELECT* FROM Recibidos')
+            rows = cursor.fetchall()
+            count3 = 0
+            for i in rows:
+                numero = QtWidgets.QTableWidgetItem()
+                self.tableWidget_2.setItem(count3, 0, numero)
+                numero = self.tableWidget_2.item(count3, 0)
+                numero.setText(str(i[1]))
+                mensaje = QtWidgets.QTableWidgetItem()
+                self.tableWidget_2.setItem(count3, 1, mensaje)
+                mensaje = self.tableWidget_2.item(count3, 1)
+                mensaje.setText(str(i[2]))
+                date = QtWidgets.QTableWidgetItem()
+                self.tableWidget_2.setItem(count3, 2, date)
+                date = self.tableWidget_2.item(count3, 2)
+                date.setText(str(i[3]))
+                count3 +=1
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
@@ -313,7 +376,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             msg.setWindowTitle("Error")
             msg.exec_()
 
-
+    #Puerto 5
     def Com5(self):
         port = 'COM5'
         try:
@@ -325,14 +388,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem5.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -345,12 +403,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
-
+      
+    #Puerto 6
     def Com6(self):
         port = 'COM6'
         try:
@@ -362,14 +416,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem6.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -381,12 +430,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.updateDB
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
-
+    
+    #Puerto 7
     def Com7(self):
         port = 'COM7'
         try:
@@ -398,14 +443,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem7.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -417,12 +457,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.updateDB
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
-            
+      
+    #Puerto 8
     def Com8(self):
         port = 'COM8'
         try:
@@ -434,14 +470,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem8.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -453,12 +484,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.updateDB
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
-            
+      
+    #Puerto 9
     def Com9(self):
         port = 'COM9'
         try:
@@ -470,14 +497,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem9.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -489,12 +511,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.updateDB
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
-            
+      
+    #Puerto 10
     def Com10(self):
         port = 'COM10'
         try:
@@ -506,14 +524,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem10.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -525,12 +538,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.updateDB
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
-            
+      
+    #Puerto 11
     def Com11(self):
         port = 'COM11'
         try:
@@ -542,14 +551,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem11.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -561,12 +565,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.updateDB
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
+      
             
+    #Puerto 12
     def Com12(self):
         port = 'COM12'
         try:
@@ -578,14 +579,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if str(parametro[3])=='F':
                 cursor.execute('UPDATE SMS SET Enviado ="I" WHERE ID ='+str(parametro[0]))
                 con.commit()
-                modem = GsmModem(port, 115200)
                 try:
-                    modem.smsTextMode = False
-                    modem.connect()
                     print('El hilo es: {0},   El parametro es: {1}'.format(threading.current_thread().getName(),parametro[0]))
-                    modem.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
-                    modem.close()
-                    #time.sleep(2)
+                    modem12.sendSms(str(parametro[1]), str(parametro[2]),waitForDeliveryReport=False, deliveryTimeout=1)
                     cursor.execute('UPDATE SMS SET Enviado ="T" WHERE ID ='+str(parametro[0]))
                     con.commit()
                     cursor.execute('INSERT INTO Enviados (Numero,Mensaje,Puerto,Hora_envio) VALUES("'+str(parametro[1])+'","'+str(parametro[2])+'","'+str(port)+'","'+str(time.asctime( time.localtime(time.time()) ))+'")')
@@ -597,12 +593,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.updateDB
         except Exception as e:
             print('try de rows: '+str(e)+' del puerto: '+port)
-        finally:
-            try:
-                modem.close()
-            except Exception as e:
-                print('Try de modem.close:  '+str(e)+' del puerto: '+port)
+      
    
+    #Abre el hilo principal de trabajo para el envio de mensajes de todos los puertos
     def start_send(self):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
@@ -619,6 +612,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         msg.setWindowTitle("info")
         msg.exec_()
 
+    #Consulta si aun hay mensajes existentes sin enviar para volver a encolarse.
     def SecondRound(self):
         con = sqlite3.connect(str(db_conn))
         cursor = con.cursor()
@@ -637,6 +631,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if again== True:
                 self.hilos()
 
+    #Funcion en la que los hilos correspondientes a cada puerto comienzan a trabajar
     def hilos(self):
         com5= threading.Thread(name ='HCOM5', target=self.Com5)
         com6= threading.Thread(name ='HCOM6',target=self.Com6)
@@ -666,7 +661,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             back = threading.Thread(target=self.SecondRound)
             back.start()
 
-
+    #Menu lateral activa los index correspondientes a la seleccion.
     def MenuSend(self, it, col):
         if it.text(col) == 'Enviados':
             print('Entrando a Enviados')
