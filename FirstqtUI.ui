@@ -134,6 +134,9 @@
     </column>
    </widget>
    <widget class="QStackedWidget" name="stackedWidget">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>220</x>
@@ -152,7 +155,7 @@
      <enum>QFrame::Sunken</enum>
     </property>
     <property name="currentIndex">
-     <number>6</number>
+     <number>7</number>
     </property>
     <widget class="QWidget" name="page">
      <widget class="QPushButton" name="pushButton">
@@ -2318,37 +2321,6 @@
        <string>Actualiza</string>
       </property>
      </widget>
-     <widget class="QProgressBar" name="progressBar_2">
-      <property name="geometry">
-       <rect>
-        <x>610</x>
-        <y>570</y>
-        <width>118</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="layoutDirection">
-       <enum>Qt::LeftToRight</enum>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-      <property name="textVisible">
-       <bool>true</bool>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <property name="invertedAppearance">
-       <bool>false</bool>
-      </property>
-     </widget>
     </widget>
     <widget class="QWidget" name="page_6">
      <widget class="QPushButton" name="Create_DB">
@@ -2401,6 +2373,63 @@
       </property>
      </widget>
     </widget>
+    <widget class="QWidget" name="page_7">
+     <widget class="QCheckBox" name="rep_enviados_checkbx">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>190</y>
+        <width>68</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Enviados</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="rep_recib_checkbx">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>280</y>
+        <width>68</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Recibidos</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="rep_todo_checkbx">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>110</y>
+        <width>68</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Todo</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="genera_rep_btn">
+      <property name="geometry">
+       <rect>
+        <x>290</x>
+        <y>420</y>
+        <width>141</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Generar reporte</string>
+      </property>
+     </widget>
+    </widget>
    </widget>
    <widget class="QPushButton" name="IniciarBTN">
     <property name="geometry">
@@ -2424,6 +2453,11 @@
       <height>31</height>
      </rect>
     </property>
+    <item>
+     <property name="text">
+      <string>Enviar sms</string>
+     </property>
+    </item>
     <item>
      <property name="text">
       <string>Componer</string>
@@ -2487,6 +2521,58 @@
      <string>Crear campaña</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="Reporte_camp">
+    <property name="geometry">
+     <rect>
+      <x>780</x>
+      <y>10</y>
+      <width>121</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Reporte de campaña</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Stop_btn">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>121</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Detener</string>
+    </property>
+   </widget>
+   <widget class="Line" name="line">
+    <property name="geometry">
+     <rect>
+      <x>910</x>
+      <y>0</y>
+      <width>20</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
+    </property>
+   </widget>
+   <widget class="Line" name="line_2">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>0</y>
+      <width>20</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
+    </property>
+   </widget>
    <zorder>comboBox</zorder>
    <zorder>treeWidget</zorder>
    <zorder>tableWidget</zorder>
@@ -2496,6 +2582,10 @@
    <zorder>ExitBTN</zorder>
    <zorder>Connect_DB</zorder>
    <zorder>crear_campaa</zorder>
+   <zorder>Reporte_camp</zorder>
+   <zorder>Stop_btn</zorder>
+   <zorder>line</zorder>
+   <zorder>line_2</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
